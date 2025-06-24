@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Multiple Choice Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #E2E2E2;
+            color: #000000;
+            overflow: hidden;
+        }
+
+        .game-container {
+            background-color: #FFFFFF;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #000000;
+            margin-bottom: 20px;
+        }
+
+        .image-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .option-button {
+            background-color: #FCD307;
+            border: none;
+            border-radius: 50px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            width: 80%;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .option-button:hover {
+            background-color: #FFBC00;
+            transform: scale(1.02);
+        }
+
+        .option-button.selected {
+            background-color: #FFBC00;
+        }
+
+        .option-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #FFFFFF;
+            border: 2px solid #000000;
+            margin-right: 10px;
+        }
+
+        .option-button.selected .option-circle {
+            background-color: #3cff00;
+        }
+
+        button {
+            background-color: #FCD307;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 10px 20px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+            font-size: 20px;
+        }
+
+        button:hover {
+            background-color: #FFBC00;
+        }
+
+        #feedback {
+            font-weight: bold;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .correct-feedback {
+            color: #4CAF50; /* Green color for correct feedback */
+        }
+
+        .incorrect-feedback {
+            color: #F44336; /* Red color for incorrect feedback */
+        }
+
+        .congratulations {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #020202;
+            font-weight: bold;
+            animation: scaleUp 1s ease-out forwards;
+        }
+
+        @keyframes scaleUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.5);
+            }
+        }
+
+        .question-container {
+            position: relative;
+            width: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .enter {
+            transform: translateX(100%);
+        }
+
+        .center {
+            transform: translateX(0);
+        }
+
+        .exit {
+            transform: translateX(-100%);
+        }
+
+        .correct-animation {
+            animation: correctPulse 1s;
+        }
+
+        @keyframes correctPulse {
+            0% {
+                transform: scale(1);
+                background-color: #FFFFFF;
+            }
+            50% {
+                transform: scale(1.05);
+                background-color: #ffffff;
+            }
+            100% {
+                transform: scale(1);
+                background-color: #FFFFFF;
+            }
+        }
+
+        .incorrect-animation {
+            animation: incorrectShake 0.5s;
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20%, 60% {
+                transform: translateX(-10px);
+            }
+            40%, 80% {
+                transform: translateX(10px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Multiple Choice Game</h1>
+        <div id="questionContainer" class="question-container">
+            <div class="image-container">
+                <img id="questionImage" src="" alt="Question image" style="display: none;">
+            </div>
+            <p id="questionText">Question: What is the correct answer?</p>
+            <div class="options-container" id="optionsForm">
+                <!-- Options will be loaded here dynamically -->
+            </div>
+            <button type="button" onclick="checkAnswers()">Submit Answers</button>
+            <p id="feedback"></p>
+        </div>
+        <div id="congratulations" class="congratulations">
+            Congratulations! You have solved all the questions.
+        </div>
+    </div>
+    <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script>
+        let questions = JSON.parse(localStorage.getItem('questions')) || [];
+        let currentQuestionIndex = 0;
+        let selectedOptions = [];
+        let confettiInterval;
+
+        function loadQuestion(index) {
+            const question = questions[index];
+            const questionContainer = document.getElementById('questionContainer');
+            const congratulationsDiv = document.getElementById('congratulations');
+            congratulationsDiv.style.display = 'none';
+
+            if (question) {
+                document.getElementById('questionText').textContent = 'Question: ' + question.questionText;
+                document.getElementById('feedback').textContent = '';
+                document.getElementById('feedback').className = '';
+                selectedOptions = [];
+
+                if (question.questionImage) {
+                    document.getElementById('questionImage').src = question.questionImage;
+                    document.getElementById('questionImage').style.display = 'block';
+                } else {
+                    document.getElementById('questionImage').style.display = 'none';
+                }
+
+                const optionsContainer = document.getElementById('optionsForm');
+                optionsContainer.innerHTML = '';
+
+                question.options.forEach((option, i) => {
+                    const button = document.createElement('button');
+                    button.className = 'option-button';
+                    button.innerHTML = `
+                        <div class="option-circle"></div>
+                        <span>${option.text}</span>
+                    `;
+                    button.onclick = function() {
+                        selectedOptions = [option.text];
+                        document.querySelectorAll('.option-button').forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                    };
+                    optionsContainer.appendChild(button);
+                });
+
+                // Trigger the enter animation
+                questionContainer.classList.add('enter');
+                setTimeout(() => {
+                    questionContainer.classList.remove('enter');
+                    questionContainer.classList.add('center');
+                }, 10);
+            }
+        }
+
+        function checkAnswers() {
+            const question = questions[currentQuestionIndex];
+            const correctOptions = question.options.filter(option => option.correct).map(option => option.text);
+            const questionContainer = document.getElementById('questionContainer');
+            const feedbackElement = document.getElementById('feedback');
+
+            if (JSON.stringify(selectedOptions.sort()) === JSON.stringify(correctOptions.sort())) {
+                feedbackElement.textContent = 'Correct!';
+                feedbackElement.className = 'correct-feedback';
+                questionContainer.classList.add('correct-animation');
+                setTimeout(() => {
+                    questionContainer.classList.remove('correct-animation');
+                    questionContainer.classList.remove('center');
+                    questionContainer.classList.add('exit');
+                    setTimeout(() => {
+                        currentQuestionIndex++;
+                        if (currentQuestionIndex < questions.length) {
+                            // Reset the position for the next question
+                            questionContainer.classList.remove('exit');
+                            loadQuestion(currentQuestionIndex);
+                        } else {
+                            feedbackElement.textContent = '';
+                            const congratulationsDiv = document.getElementById('congratulations');
+                            congratulationsDiv.style.display = 'block';
+                            startConfetti();
+                        }
+                    }, 500);
+                }, 1000);
+            } else {
+                feedbackElement.textContent = 'Incorrect. Try again.';
+                feedbackElement.className = 'incorrect-feedback';
+                questionContainer.classList.add('incorrect-animation');
+                setTimeout(() => {
+                    questionContainer.classList.remove('incorrect-animation');
+                }, 500);
+            }
+        }
+
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const myConfetti = confetti.create(canvas, { resize: true, useWorker: true });
+
+            confettiInterval = setInterval(() => {
+                myConfetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }, 1000);
+        }
+
+        function stopConfetti() {
+            clearInterval(confettiInterval);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (questions.length > 0) {
+                loadQuestion(currentQuestionIndex);
+            }
+        });
+    </script>
+</body>
+</html>
