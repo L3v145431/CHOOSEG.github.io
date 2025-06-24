@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiple Choice Game</title>
     <style>
         body {
@@ -18,11 +19,11 @@
 
         .game-container {
             background-color: #FFFFFF;
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 600px;
+            max-width: 90%;
             width: 100%;
             position: relative;
             overflow: hidden;
@@ -31,6 +32,7 @@
         h1 {
             color: #000000;
             margin-bottom: 20px;
+            font-size: 24px;
         }
 
         .image-container {
@@ -99,7 +101,7 @@
             padding: 10px 20px;
             margin-top: 10px;
             transition: background-color 0.3s;
-            font-size: 20px;
+            font-size: 18px;
         }
 
         button:hover {
@@ -109,15 +111,15 @@
         #feedback {
             font-weight: bold;
             margin-top: 20px;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .correct-feedback {
-            color: #4CAF50; /* Green color for correct feedback */
+            color: #4CAF50;
         }
 
         .incorrect-feedback {
-            color: #F44336; /* Red color for incorrect feedback */
+            color: #F44336;
         }
 
         .congratulations {
@@ -193,6 +195,17 @@
             }
             40%, 80% {
                 transform: translateX(10px);
+            }
+        }
+
+        @media (min-width: 768px) {
+            .game-container {
+                max-width: 600px;
+                padding: 30px;
+            }
+
+            h1 {
+                font-size: 28px;
             }
         }
     </style>
